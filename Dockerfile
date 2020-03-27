@@ -1,29 +1,32 @@
 FROM registry.access.redhat.com/rhscl/python-27-rhel7
 
-MAINTAINER Kilian Henneboehle "kilian.henneboehle@mailbox.org"
 
-ENV ELASTALERT_VERSION 0.1.29
+ENV ELASTALERT_VERSION=v0.1.36
 
 # Elastalert rules directory.
-ENV ELASTALERT_HOME /opt/elastalert
-ENV RULES_DIRECTORY $ELASTALERT_HOME/rules
-ENV CONFIG_DIRECTORY $ELASTALERT_HOME/config
+ENV ELASTALERT_HOME=/opt/elastalert
+ENV RULES_DIRECTORY=$ELASTALERT_HOME/rules
+ENV CONFIG_DIRECTORY=$ELASTALERT_HOME/config
 
 USER root
 
-RUN INSTALL_PKGS="python-devel python-setuptools net-tools" && \
+RUN INSTALL_PKGS="python-devel python-setuptools net-tools " && \
     yum -y install ${INSTALL_PKGS} && \
     yum -y update && \
     yum -q clean all
 
 RUN cd $HOME
 
-COPY elastalert-0.1.29.tar.gz /elastalert-0.1.29.tar.gz
+RUN wget https://github.com/Yelp/elastalert/archive/${ELASTALERT_VERSION}.tar.gz -O elastalert-${ELASTALERT_VERSION}.tar.gz
 
-RUN tar xvf /elastalert-0.1.29.tar.gz
+RUN ls -l && pwd
+
+RUN tar xvf elastalert-${ELASTALERT_VERSION}.tar.gz
+
+RUN ls -l
 
 # Copy config
-COPY /configuration/run.sh $ELASTALERT_HOME/run.sh
+COPY configuration/run.sh $ELASTALERT_HOME/run.sh
 
 # Create default user and change ownership of files
 RUN useradd -u 1000 -r -g 0 -m -d $HOME -s /sbin/nologin -c "elastalert user" elastalert && \
