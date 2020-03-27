@@ -12,7 +12,7 @@ ENV CONFIG_DIRECTORY $ELASTALERT_HOME/config
 USER root
 
 RUN INSTALL_PKGS="python-devel python-setuptools net-tools" && \
-    yum -y --disablerepo=* --enablerepo=rhel-7-server-rpms --enablerepo=rhel-server-rhscl-7-rpms install ${INSTALL_PKGS} && \
+    yum -y install ${INSTALL_PKGS} && \
     yum -y update && \
     yum -q clean all
 
