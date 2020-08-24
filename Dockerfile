@@ -39,8 +39,6 @@ RUN INSTALL_PKGS="python-devel" && \
     yum -y install ${INSTALL_PKGS} && \
     yum -q clean all
 
-USER 1000
-
 # Download Elastalert.
 RUN wget -O elastalert.zip $ELASTALERT_URL && \
     unzip elastalert.zip && \
@@ -57,12 +55,13 @@ RUN pip install "setuptools>=11.3" && python setup.py install && \
     mkdir -p "${CONFIG_DIR}" && \
     mkdir -p "${RULES_DIRECTORY}" && \
     mkdir -p "${LOG_DIR}" && \
-    mkdir -p /var/empty && \
+    mkdir -p /var/empty
 
 # Copy the script used to launch the Elastalert when a container is started.
 COPY ./start-elastalert.sh ${ELASTALERT_HOME}/
 # Make the start-script executable.
-RUN chmod +x ${ELASTALERT_HOME}/start-elastalert.sh
+RUN chmod +x ${ELASTALERT_HOME}/start-elastalert.sh && \
+    fix-permissions ${ELASTALERT_HOME}
 
 # # Create default user and change ownership of files
 # RUN useradd -u 1000 -r -g 0 -m -d $HOME -s /sbin/nologin -c "elastalert user" elastalert && \
@@ -87,7 +86,7 @@ VOLUME [ "${CONFIG_DIR}", "${RULES_DIRECTORY}", "${LOG_DIR}"]
 #     pip install elastalert
 
 # switch to elastalert
-# USER 1000
+USER 1000
 
 # Launch Elastalert when a container is started.
 CMD ["${ELASTALERT_HOME}/start-elastalert.sh"]
