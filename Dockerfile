@@ -1,92 +1,25 @@
-FROM centos/python-36-centos7
+FROM python:alpine
 
-# The ElastAlert version to use. Configurable on build time. 
-ARG ELASTALERT_VERSION=v0.2.4
+LABEL description="ElastAlert suitable for Kubernetes and Helm"
+LABEL maintainer="Jason Ertel (jertel at codesim.com)"
 
-# Elastalert home directory full path.
-ENV ELASTALERT_HOME=/opt/elastalert
-# Set this environment variable to True to set timezone on container start.
-ENV SET_CONTAINER_TIMEZONE False
-# Default container timezone as found under the directory /usr/share/zoneinfo/.
-ENV CONTAINER_TIMEZONE US/Eastern
-# URL from which to download Elastalert.
-ENV ELASTALERT_URL https://github.com/Yelp/elastalert/archive/$ELASTALERT_VERSION.zip
-# Directory holding configuration for Elastalert and Supervisor.
-ENV CONFIG_DIR $ELASTALERT_HOME/config
-# Elastalert rules directory.
-ENV RULES_DIRECTORY $ELASTALERT_HOME/rules
-# Elastalert configuration file path in configuration directory.
-ENV ELASTALERT_CONFIG ${CONFIG_DIR}/elastalert_config.yaml
-# Supervisor configuration file for Elastalert.
-ENV ELASTALERT_SUPERVISOR_CONF ${CONFIG_DIR}/elastalert_supervisord.conf
-# Alias, DNS or IP of Elasticsearch host to be queried by Elastalert. Set in default Elasticsearch configuration file.
-ENV ELASTICSEARCH_HOST logging-es.openshift-logging.svc
-# Port on above Elasticsearch host. Set in default Elasticsearch configuration file.
-ENV ELASTICSEARCH_PORT 9200
-# Use TLS to connect to Elasticsearch (True or False)
-ENV ELASTICSEARCH_TLS True
-# Verify TLS
-ENV ELASTICSEARCH_TLS_VERIFY True
-# ElastAlert writeback index
-ENV ELASTALERT_INDEX elastalert_status
+ARG ELASTALERT_VERSION=0.2.4
 
-# WORKDIR /opt
-USER root
+RUN apk --update upgrade && \
+    apk add gcc libffi-dev musl-dev python3-dev openssl-dev tzdata libmagic && \
+    rm -rf /var/cache/apk/*
 
-# Install software required for Elastalert
-RUN INSTALL_PKGS="python-devel python-setuptools net-tools" && \
-    yum -y update && \
-    yum -y install ${INSTALL_PKGS} && \
-    yum -q clean all
+RUN pip install elastalert==${ELASTALERT_VERSION} && \
+    apk del gcc libffi-dev musl-dev python3-dev openssl-dev
 
-# Download Elastalert.
-RUN wget -O elastalert.zip $ELASTALERT_URL && \
-    unzip elastalert.zip && \
-    rm elastalert.zip && \
-    mv elastalert* "${ELASTALERT_HOME}"
+RUN mkdir -p /opt/elastalert && \
+    echo "#!/bin/sh" >> /opt/elastalert/run.sh && \
+    echo "set -e" >> /opt/elastalert/run.sh && \
+    echo "elastalert-create-index --config /opt/config/elastalert_config.yaml" >> /opt/elastalert/run.sh && \
+    echo "exec elastalert --config /opt/config/elastalert_config.yaml \"\$@\"" >> /opt/elastalert/run.sh && \
+    chmod +x /opt/elastalert/run.sh
 
-WORKDIR "${ELASTALERT_HOME}"
+ENV TZ "UTC"
 
-# Install Elastalert.
-RUN pip install "setuptools>=11.3" && python setup.py install && \
-# Install Supervisor.
-    easy_install supervisor && \
-# Create directories. The /var/empty directory is used by openntpd.
-    mkdir -p "${CONFIG_DIR}" && \
-    mkdir -p "${RULES_DIRECTORY}" && \
-    mkdir -p "${LOG_DIR}" && \
-    mkdir -p /var/empty
-
-# Copy the script used to launch the Elastalert when a container is started.
-COPY ./start-elastalert.sh ${ELASTALERT_HOME}/
-# Make the start-script executable.
-RUN chmod +x ${ELASTALERT_HOME}/start-elastalert.sh && \
-    fix-permissions ${ELASTALERT_HOME}
-
-# # Create default user and change ownership of files
-# RUN useradd -u 1000 -r -g 0 -m -d $HOME -s /sbin/nologin -c "elastalert user" elastalert && \
-#     cp -r /etc/skel/. $HOME && \
-#     chown -R elastalert:0 $HOME && \
-#     fix-permissions $HOME && \
-#     fix-permissions /opt/app-root
-
-# # Create dirs
-# RUN chmod +x $ELASTALERT_HOME/run.sh && \
-#     ln -s $ELASTALERT_HOME/run.sh $HOME/run.sh && \
-#     mkdir $ELASTALERT_HOME/rules && \
-#     mkdir $ELASTALERT_HOME/config
-
-# Define mount points.
-VOLUME [ "${CONFIG_DIR}", "${RULES_DIRECTORY}", "${LOG_DIR}"]
-
-# Install workaround
-# RUN . /opt/app-root/etc/scl_enable && \
-#     pip install --upgrade pip && \
-#     pip install --upgrade setuptools && \
-#     pip install elastalert
-
-# switch to elastalert
-USER 1000
-
-# Launch Elastalert when a container is started.
-CMD ["${ELASTALERT_HOME}/start-elastalert.sh"]
+WORKDIR /opt/elastalert
+ENTRYPOINT ["/opt/elastalert/run.sh"]
