@@ -31,13 +31,15 @@ ENV ELASTICSEARCH_TLS_VERIFY True
 ENV ELASTALERT_INDEX elastalert_status
 
 # WORKDIR /opt
-# USER root
+USER root
 
 # Install software required for Elastalert
 RUN INSTALL_PKGS="python-devel" && \
     yum -y update && \
     yum -y install ${INSTALL_PKGS} && \
     yum -q clean all
+
+USER 1000
 
 # Download Elastalert.
 RUN wget -O elastalert.zip $ELASTALERT_URL && \
