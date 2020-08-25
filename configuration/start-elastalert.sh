@@ -47,7 +47,7 @@ fi
 # Force immediate synchronisation of the time and start the time-synchronization service.
 # In order to be able to use ntpd in the container, it must be run with the SYS_TIME capability.
 # In addition you may want to add the SYS_NICE capability, in order for ntpd to be able to modify its priority.
-ntpd -s
+# ntpd -s
 
 # Elastalert configuration:
 if [ ! -f ${ELASTALERT_CONFIG} ]; then
