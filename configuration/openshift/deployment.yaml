@@ -25,7 +25,7 @@ spec:
         terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/curator/keys
-          name: curator-secret
+          name: logging-elasticsearch
           readOnly: true
         - mountPath: /opt/elastalert/config
           name: elastalert-config
@@ -34,10 +34,17 @@ spec:
       securityContext: {}
       terminationGracePeriodSeconds: 30
       volumes:
-      - name: curator-secret
+      - name: logging-elasticsearch
         secret:
           defaultMode: 420
-          secretName: logging-curator
+          items:
+          - key: admin-ca
+            path: ca
+          - key: admin-cert
+            path: cert
+          - key: admin-key
+            path: key
+          secretName: logging-elasticsearch
       - configMap:
           defaultMode: 420
           name: elastalert-config
