@@ -85,7 +85,7 @@ data:
     # The elasticsearch hostname for metadata writeback
     # Note that every rule can have it's own elasticsearch host
     # en0 on docker host
-    es_host: logging-es.openshift-logging.svc
+    es_host: logging-es
 
     # The elasticsearch port
     es_port: 9200
@@ -171,3 +171,9 @@ spec:
       dockerfilePath: Dockerfile
     type: Docker
   successfulBuildsHistoryLimit: 5
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: elastalert-ocp
+  namespace: openshift-logging

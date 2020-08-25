@@ -18,7 +18,7 @@ ENV ELASTALERT_CONFIG ${CONFIG_DIR}/elastalert_config.yaml
 # Directory to which Elastalert and Supervisor logs are written.
 ENV LOG_DIR ${ELASTALERT_HOME}/logs
 # Alias, DNS or IP of Elasticsearch host to be queried by Elastalert. Set in default Elasticsearch configuration file.
-ENV ELASTICSEARCH_HOST logging-es.openshift-logging.svc
+ENV ELASTICSEARCH_HOST logging-es
 # Port on above Elasticsearch host. Set in default Elasticsearch configuration file.
 ENV ELASTICSEARCH_PORT 9200
 # Use TLS to connect to Elasticsearch (True or False)
