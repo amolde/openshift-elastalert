@@ -41,7 +41,7 @@ RUN mkdir -p ${ELASTALERT_HOME} && \
 WORKDIR "${ELASTALERT_HOME}"
 
 # Copy the script used to launch the Elastalert when a container is started.
-COPY ./start-elastalert.sh ${ELASTALERT_HOME}/
+COPY configuration/start-elastalert.sh ${ELASTALERT_HOME}/
 # Make the start-script executable.
 RUN chmod +x ${ELASTALERT_HOME}/start-elastalert.sh
 
