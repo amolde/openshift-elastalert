@@ -15,6 +15,8 @@ ENV CONFIG_DIR ${ELASTALERT_HOME}/config
 ENV RULES_DIRECTORY ${ELASTALERT_HOME}/rules
 # Elastalert configuration file path in configuration directory.
 ENV ELASTALERT_CONFIG ${CONFIG_DIR}/elastalert_config.yaml
+# Directory to which Elastalert and Supervisor logs are written.
+ENV LOG_DIR ${ELASTALERT_HOME}/logs
 # Alias, DNS or IP of Elasticsearch host to be queried by Elastalert. Set in default Elasticsearch configuration file.
 ENV ELASTICSEARCH_HOST logging-es.openshift-logging.svc
 # Port on above Elasticsearch host. Set in default Elasticsearch configuration file.
@@ -35,6 +37,7 @@ RUN pip install elastalert==${ELASTALERT_VERSION} && \
 
 RUN mkdir -p ${ELASTALERT_HOME} && \
     mkdir -p "${CONFIG_DIR}" && \
+    mkdir -p "${LOG_DIR}" && \
     mkdir -p "${RULES_DIRECTORY}" && \
     mkdir -p /var/empty
 
