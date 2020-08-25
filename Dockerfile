@@ -1,4 +1,4 @@
-FROM python:3.8-slim-buster
+FROM python:alpine
 
 # The ElastAlert version to use. Configurable on build time. 
 ARG ELASTALERT_VERSION=0.2.4
