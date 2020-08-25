@@ -1,0 +1,173 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  labels:
+    app: elastalert-ocp
+  name: elastalert-ocp
+  namespace: openshift-logging
+spec:
+  replicas: 1
+  selector:
+    app: elastalert-ocp
+    deploymentconfig: elastalert-ocp
+  template:
+    metadata:
+      labels:
+        app: elastalert-ocp
+        deploymentconfig: elastalert-ocp
+    spec:
+      containers:
+      - image: openshift-logging/elastalert-ocp:latest
+        imagePullPolicy: Always
+        name: elastalert-ocp
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/curator/keys
+          name: curator-secret
+          readOnly: true
+        - mountPath: /opt/elastalert/config
+          name: elastalert-config
+        - mountPath: /opt/elastalert/rules
+          name: elastalert-rules
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: curator-secret
+        secret:
+          defaultMode: 420
+          secretName: logging-curator
+      - configMap:
+          defaultMode: 420
+          name: elastalert-config
+        name: elastalert-config
+      - configMap:
+          defaultMode: 420
+          name: elastalert-rules
+        name: elastalert-rules
+  triggers:
+  - type: ConfigChange
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - elastalert-ocp
+      from:
+        kind: ImageStreamTag
+        name: elastalert-ocp:latest
+        namespace: openshift-logging
+    type: ImageChange
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elastalert-config
+  namespace: openshift-logging
+data:
+  elastalert_config.yaml: |
+    # This is the folder that contains the rule yaml files
+    # Any .yaml file will be loaded as a rule
+    rules_folder: /opt/elastalert/rules
+
+    #
+    scan_subdirectories: false
+
+    # How often ElastAlert will query elasticsearch
+    # The unit can be anything from weeks to seconds
+    run_every:
+      minutes: 1
+
+    # ElastAlert will buffer results from the most recent
+    # period of time, in case some log sources are not in real time
+    buffer_time:
+      minutes: 15
+
+    # The elasticsearch hostname for metadata writeback
+    # Note that every rule can have it's own elasticsearch host
+    # en0 on docker host
+    es_host: logging-es.openshift-logging.svc
+
+    # The elasticsearch port
+    es_port: 9200
+
+    # The index on es_host which is used for metadata storage
+    # This can be a unmapped index, but it is recommended that you run
+    # elastalert-create-index to set a mapping
+    writeback_index: elastalert_status
+
+    # If an alert fails for some reason, ElastAlert will retry
+    # sending the alert until this time period has elapsed
+    alert_time_limit:
+      days: 2
+
+    use_ssl: True
+    verify_certs: True
+
+    # Secrets must be mounted!
+    ca_certs: /etc/curator/keys/ca
+    client_cert: /etc/curator/keys/cert
+    client_key: /etc/curator/keys/key
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elastalert-rules
+  namespace: openshift-logging
+data:
+  rules-alerting.yaml: |
+    name: example alert
+    type: frequency
+    index: project.elastalert.*
+    num_events: 1
+
+    timeframe:
+        minutes: 1
+
+    filter:
+    - query:
+        query_string:
+          query: "message: Hello"
+
+    # (Required)
+    # The alert is use when a match is found
+    alert:
+    - ms_teams:
+        ms_teams_webhook_url: https://outlook.office.com/webhook/2a34a818-6745-4096-97bf-5b26caf63f7f@a8eec281-aaa3-4dae-ac9b-9a398b9215e7/IncomingWebhook/5e349056dee94949887b4625d70432f1/cb742064-a9b6-4b62-bb88-f7fe3a905112
+        alert_text_type: alert_text_only
+        ms_teams_alert_summary: "dummy"
+        # ms_teams_alert_summary: [alert_text]
+        # alert_text: |
+        #   Data<br>
+        #   ip: {0}<br>
+        #   port: {1}<br>
+        #   status up: {2}<br>
+        #   status down: {3}<br>
+        # alert_text_args:
+        #   - url.domain
+        #   - url.port
+        #   - summary.up
+        #   - summary.down        
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    build: elastalert-ocp
+  name: elastalert-ocp
+  namespace: openshift-logging
+spec:
+  failedBuildsHistoryLimit: 5
+  output:
+    to:
+      kind: ImageStreamTag
+      name: elastalert-ocp:latest
+  source:
+    git:
+      uri: https://github.com/amolde/openshift-elastalert.git
+    type: Git
+  strategy:
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+    type: Docker
+  successfulBuildsHistoryLimit: 5
