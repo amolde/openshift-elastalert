@@ -4,7 +4,7 @@ FROM python:alpine
 ARG ELASTALERT_VERSION=0.2.4
 
 # Elastalert home directory full path.
-ENV ELASTALERT_HOME=/opt/elastalert
+ENV ELASTALERT_HOME /opt/elastalert
 # Set this environment variable to True to set timezone on container start.
 ENV SET_CONTAINER_TIMEZONE False
 # Default container timezone as found under the directory /usr/share/zoneinfo/.
