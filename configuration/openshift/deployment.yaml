@@ -122,39 +122,159 @@ metadata:
   name: elastalert-rules
   namespace: openshift-logging
 data:
-  rules-alerting.yaml: |
-    name: example alert
+  events-alert.yaml: |
+    # elastalert-test-rule --config /opt/elastalert/config/elastalert_config.yaml --formatted-output --alert /tmp/test.yaml
+    name: New Openshift Event
+
     type: frequency
-    index: project.elastalert.*
+    
+    index: .all*
+    
     num_events: 1
+    
+    realert:
+      minutes: 0
 
     timeframe:
-        minutes: 1
-
+      minutes: 2
+      # hours: 18
+    
     filter:
     - query:
-        query_string:
-          query: "message: Hello"
-
-    # (Required)
-    # The alert is use when a match is found
+        bool:
+          must:
+          - exists:
+              field: "kubernetes.event.type"
+          must_not:
+          - match:
+              kubernetes.event.type: Normal
+          - match:
+              kubernetes.event.type: Info
+              
     alert:
     - ms_teams:
         ms_teams_webhook_url: https://outlook.office.com/webhook/2a34a818-6745-4096-97bf-5b26caf63f7f@a8eec281-aaa3-4dae-ac9b-9a398b9215e7/IncomingWebhook/5e349056dee94949887b4625d70432f1/cb742064-a9b6-4b62-bb88-f7fe3a905112
         alert_text_type: alert_text_only
-        ms_teams_alert_summary: "dummy"
-        # ms_teams_alert_summary: [alert_text]
-        # alert_text: |
-        #   Data<br>
-        #   ip: {0}<br>
-        #   port: {1}<br>
-        #   status up: {2}<br>
-        #   status down: {3}<br>
-        # alert_text_args:
-        #   - url.domain
-        #   - url.port
-        #   - summary.up
-        #   - summary.down        
+        ms_teams_alert_summary: "At least one non-normal Openshift Event was registered."
+        alert_text: |
+          <b>No. of Events:</b> <b>{9}</b><br>
+          <b>Type:</b> <b>{0}</b><br>
+          <b>Namespace:</b> {1}<br>
+          <b>Reason:</b> <b>{2}</b><br>
+          <b>Message:</b> {3}<br>
+          <b>Kind:</b> {4}<br>
+          <b>Name:</b> {5}<br>
+          <b>Count:</b> {6}<br>
+          <b>First Timestamp:</b> {7}<br>
+          <b>Last Timestamp:</b> {8}<br>
+        alert_text_args:
+        - kubernetes.event.type
+        - kubernetes.event.involvedObject.namespace
+        - kubernetes.event.reason
+        - kubernetes.event.message
+        - kubernetes.event.involvedObject.kind
+        - kubernetes.event.involvedObject.name
+        - kubernetes.event.count
+        - kubernetes.event.firstTimestamp
+        - kubernetes.event.lastTimestamp
+        - num_hits
+  elastalert-healthcheck-alert.yaml: |
+    name: Elastalert Health Check
+
+    type: any
+    
+    index: .all*
+    
+    num_events: 1
+    
+    realert:
+      minutes: 30
+
+    aggregation:
+      minutes: 30
+
+    timeframe:
+      minutes: 1
+    
+    alert:
+    - ms_teams:
+        ms_teams_webhook_url: https://outlook.office.com/webhook/2a34a818-6745-4096-97bf-5b26caf63f7f@a8eec281-aaa3-4dae-ac9b-9a398b9215e7/IncomingWebhook/5e349056dee94949887b4625d70432f1/cb742064-a9b6-4b62-bb88-f7fe3a905112
+        ms_teams_alert_summary: "Elastalert seems to be working fine."
+        alert_subject: Elastalert Health Check
+        alert_text: "Elastalert seems to be working fine."
+        alert_text_type: alert_text_only
+  kafka-prod-alert.yaml: |
+    name: KAFKA-PROD - Error
+
+    type: frequency
+
+    index: .all*
+
+    num_events: 1
+
+    timeframe:
+      minutes: 2
+
+    filter:
+    - query:
+        bool:
+          must:
+          - match:
+              kubernetes.namespace_name: kafka-prod
+          - match:
+              level: err
+
+    alert:
+    - ms_teams:
+        ms_teams_webhook_url: https://outlook.office.com/webhook/2a34a818-6745-4096-97bf-5b26caf63f7f@a8eec281-aaa3-4dae-ac9b-9a398b9215e7/IncomingWebhook/5e349056dee94949887b4625d70432f1/cb742064-a9b6-4b62-bb88-f7fe3a905112
+        alert_text_type: alert_text_only
+        ms_teams_alert_summary: "At least one error level log entry found."
+        alert_text: |
+          <b>Pod Name:</b> <b>{0}</b><br>
+          <b>Level:</b> <b>{1}</b><br>
+          <b>No. of Hits:</b> {3}<br>
+          <b>Message:</b> {2}<br>
+        alert_text_args:
+        - kubernetes.pod_name
+        - level
+        - message
+        - num_hits
+  nuadmit-alert.yaml: |
+    name: NUADMIT - Error
+
+    type: frequency
+
+    index: .all*
+
+    num_events: 1
+
+    timeframe:
+      minutes: 2
+
+    filter:
+    - query:
+        bool:
+          must:
+          - match:
+              kubernetes.namespace_name: nuadmit-prod
+          - match:
+              level: err
+
+    alert:
+    - ms_teams:
+        ms_teams_webhook_url: https://outlook.office.com/webhook/0b590a01-3739-44be-8a19-5ad8414167f5@a8eec281-aaa3-4dae-ac9b-9a398b9215e7/IncomingWebhook/4c846f496acd42cb8aa44e42ccfcee2b/cb742064-a9b6-4b62-bb88-f7fe3a905112
+        alert_text_type: alert_text_only
+        ms_teams_alert_summary: "At least one error level log entry found."
+        alert_text: |
+          <b>Pod Name:</b> <b>{0}</b><br>
+          <b>Level:</b> <b>{1}</b><br>
+          <b>No. of Hits:</b> {3}<br>
+          <b>Message:</b> {2}<br>
+        alert_text_args:
+        - kubernetes.pod_name
+        - level
+        - message
+        - num_hits
 ---
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
