@@ -182,11 +182,11 @@ data:
     name: Elastalert Health Check
 
     type: frequency
-    
+
     index: .all*
-    
+
     num_events: 1
-    
+
     realert:
       minutes: 30
 
@@ -195,7 +195,10 @@ data:
 
     timeframe:
       minutes: 1
-    
+
+    use_count_query: true
+    doc_type: com.redhat.viaq.common
+
     filter:
     - query:
         match:
