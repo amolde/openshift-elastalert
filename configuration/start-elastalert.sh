@@ -114,4 +114,4 @@ fi
 
 # echo "Starting Elastalert..."
 # exec supervisord -c "${ELASTALERT_SUPERVISOR_CONF}" -n
-python -m elastalert.elastalert --config ${ELASTALERT_CONFIG} --start $(date --iso-8601)T00:00:00 
+python -m elastalert.elastalert --config ${ELASTALERT_CONFIG} --start $(date +%Y-%m-%dT00:00:00)
