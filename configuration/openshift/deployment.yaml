@@ -181,7 +181,7 @@ data:
   elastalert-healthcheck-alert.yaml: |
     name: Elastalert Health Check
 
-    type: any
+    type: frequency
     
     index: .all*
     
@@ -196,6 +196,11 @@ data:
     timeframe:
       minutes: 1
     
+    filter:
+    - query:
+        match:
+          level: info
+
     alert:
     - ms_teams:
         ms_teams_webhook_url: https://outlook.office.com/webhook/2a34a818-6745-4096-97bf-5b26caf63f7f@a8eec281-aaa3-4dae-ac9b-9a398b9215e7/IncomingWebhook/5e349056dee94949887b4625d70432f1/cb742064-a9b6-4b62-bb88-f7fe3a905112
