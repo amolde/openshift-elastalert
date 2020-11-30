@@ -1,4 +1,4 @@
-FROM python:alpine
+FROM python:3.8.6-alpine
 
 # The ElastAlert version to use. Configurable on build time. 
 ARG ELASTALERT_VERSION=0.2.4
